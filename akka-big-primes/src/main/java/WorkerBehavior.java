@@ -38,15 +38,29 @@ public class WorkerBehavior extends AbstractBehavior<WorkerBehavior.Command> {
         return Behaviors.setup(WorkerBehavior::new);
     }
 
+    private BigInteger prime;
+
     @Override
     public Receive<Command> createReceive() {
+        return handleMessagesWhenWeDontYetHaveAPrimeNumber();
+    }
+
+    public Receive<Command> handleMessagesWhenWeDontYetHaveAPrimeNumber() {
         return newReceiveBuilder()
                 .onAnyMessage(command -> {
-                    if (command.getMessage().equals("start")) {
-                        BigInteger bigInteger = new BigInteger(2000, new Random());
-                        command.getSender().tell(new ManageBehavior.ResultCommand(bigInteger.nextProbablePrime()));
-                    }
-                    return this;
+                    BigInteger bigInteger = new BigInteger(2000, new Random());
+                    BigInteger prime = bigInteger.nextProbablePrime();
+                    command.getSender().tell(new ManageBehavior.ResultCommand(prime));
+                    return handleMessagesWhenWeAlreadyHaveAPrimeNumber(prime);
+                })
+                .build();
+    }
+
+    public Receive<Command> handleMessagesWhenWeAlreadyHaveAPrimeNumber(BigInteger prime) {
+        return newReceiveBuilder()
+                .onAnyMessage(command -> {
+                    command.getSender().tell(new ManageBehavior.ResultCommand(prime));
+                    return Behaviors.same();
                 })
                 .build();
     }
