@@ -1,5 +1,6 @@
 package blockchain;
 
+import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
@@ -15,11 +16,13 @@ public class WorkerBehavior extends AbstractBehavior<WorkerBehavior.Command> {
 		private Block block;
 		private int startNonce;
 		private int difficulty;
+		private ActorRef<HashResult> controller;
 		
-		public Command(Block block, int startNonce, int difficulty) {
+		public Command(Block block, int startNonce, int difficulty, ActorRef<HashResult> controller) {
 			this.block = block;
 			this.startNonce = startNonce;
 			this.difficulty = difficulty;
+			this.controller = controller;
 		}
 		
 		public Block getBlock() {
@@ -30,6 +33,9 @@ public class WorkerBehavior extends AbstractBehavior<WorkerBehavior.Command> {
 		}
 		public int getDifficulty() {
 			return difficulty;
+		}
+		public ActorRef<HashResult> getController() {
+			return controller;
 		}
 		
 	}
@@ -60,8 +66,8 @@ public class WorkerBehavior extends AbstractBehavior<WorkerBehavior.Command> {
 					if (hash.substring(0,message.getDifficulty()).equals(target)) {
 						HashResult hashResult = new HashResult();
 						hashResult.foundAHash(hash, nonce);
-						// send the hash result to the controller
 						getContext().getLog().debug(hashResult.getNonce() + " : " + hashResult.getHash());
+						message.getController().tell(hashResult);
 						return Behaviors.same();
 					}
 					else {

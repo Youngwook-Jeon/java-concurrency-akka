@@ -1,7 +1,9 @@
 import akka.actor.testkit.typed.CapturedLogEvent;
 import akka.actor.testkit.typed.javadsl.BehaviorTestKit;
+import akka.actor.testkit.typed.javadsl.TestInbox;
 import blockchain.WorkerBehavior;
 import model.Block;
+import model.HashResult;
 import org.junit.jupiter.api.Test;
 import org.slf4j.event.Level;
 import utils.BlocksData;
@@ -16,7 +18,8 @@ public class MiningTests {
     void testMiningFailsIfNonceNotInRange() {
         BehaviorTestKit<WorkerBehavior.Command> testActor = BehaviorTestKit.create(WorkerBehavior.create());
         Block block = BlocksData.getNextBlock(0, "0");
-        WorkerBehavior.Command message = new WorkerBehavior.Command(block, 0, 5);
+        TestInbox<HashResult> testInbox = TestInbox.create();
+        WorkerBehavior.Command message = new WorkerBehavior.Command(block, 0, 5, testInbox.getRef());
         testActor.run(message);
         List<CapturedLogEvent> logMessages = testActor.getAllLogEntries();
         assertEquals(logMessages.size(), 1);
